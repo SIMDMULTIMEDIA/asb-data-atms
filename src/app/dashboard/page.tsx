@@ -7,7 +7,7 @@ import { StaffLayout } from "@/components/layout/StaffLayout";
 import { collection, query, where, onSnapshot, limit, orderBy } from "firebase/firestore";
 import { getFirebaseDb } from "@/firebase/client";
 import { ActivityFeed, Task } from "@/types";
-import { Clock, CheckCircle, AlertCircle, FileText, LayoutDashboard, Briefcase } from "lucide-react";
+import { Clock, CheckCircle, AlertCircle, FileText, LayoutDashboard, Briefcase, CheckSquare } from "lucide-react";
 
 export default function StaffDashboardPage() {
   const { userData } = useAuth();
