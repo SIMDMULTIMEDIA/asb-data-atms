@@ -10,11 +10,14 @@ service cloud.firestore {
     
     function getUserRole() {
       // Read role from the users collection to avoid needing custom claims for the MVP
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      // Use exists() check to prevent errors when creating a profile for the first time
+      let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
+      return exists(userDocPath) ? get(userDocPath).data.role : null;
     }
     
     function getUserDepartment() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.department;
+      let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
+      return exists(userDocPath) ? get(userDocPath).data.department : null;
     }
     
     function isSuperAdmin() {
@@ -31,7 +34,8 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow write: if isSuperAdmin() || request.auth.uid == userId;
+      // Short-circuit: Check if user is writing their own document FIRST.
+      allow write: if request.auth.uid == userId || isSuperAdmin();
     }
 
     match /departments/{deptId} {
