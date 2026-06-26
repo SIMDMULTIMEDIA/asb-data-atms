@@ -8,7 +8,7 @@ import {
   GoogleAuthProvider,
   signOut as firebaseSignOut
 } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { getFirebaseDb, getFirebaseAuth } from "@/firebase/client";
 
 interface UserData {
