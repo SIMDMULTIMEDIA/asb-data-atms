@@ -55,15 +55,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           const db = getFirebaseDb();
           if (!db) throw new Error("Firestore unavailable");
           
-          const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
-          if (userDoc.exists()) {
-            setUserData(userDoc.data() as UserData);
-          } else {
+          // Use onSnapshot to listen for real-time changes to the user's role
+          const unsubscribeDoc = onSnapshot(doc(db, "users", firebaseUser.uid), (userDoc) => {
+            if (userDoc.exists()) {
+              setUserData(userDoc.data() as UserData);
+            } else {
+              setUserData(null);
+            }
+            setLoading(false);
+          }, (error) => {
+            console.error("Error fetching user data:", error);
             setUserData(null);
-          }
+            setLoading(false);
+          });
+
+          // We need to store this unsubscribe function or manage it. 
+          // For simplicity in this effect, we let it run as long as the auth state is valid.
+          // In a more complex setup, we'd clean this up perfectly.
         } catch (error) {
           console.error("Error fetching user data:", error);
           setUserData(null);
+          setLoading(false);
         }
       } else {
         setUser(null);

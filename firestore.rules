@@ -9,11 +9,12 @@ service cloud.firestore {
     }
     
     function getUserRole() {
-      // In production with custom claims, this would be: return request.auth.token.role;
-      // Since custom claims take time to setup, we use a fallback read to users collection.
-      // However, reading users collection for every query is expensive. 
-      // For now, let's assume custom claims are used:
-      return request.auth.token.role;
+      // Read role from the users collection to avoid needing custom claims for the MVP
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    function getUserDepartment() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.department;
     }
     
     function isSuperAdmin() {
@@ -104,10 +105,10 @@ service cloud.firestore {
       // Department Head: Read tasks assigned to their department
       // Staff: Read tasks assigned directly to them, or to their department if visibility is public_department
       allow read: if isAdmin() || 
-                     (isAuthenticated() && getUserRole() == 'department_head' && request.auth.token.department in resource.data.assignedTo.assignees) ||
+                     (isAuthenticated() && getUserRole() == 'department_head' && getUserDepartment() in resource.data.assignedTo.assignees) ||
                      (isAuthenticated() && (
                         request.auth.uid in resource.data.assignedTo.assignees ||
-                        (resource.data.visibility == 'public_department' && request.auth.token.department in resource.data.assignedTo.assignees)
+                        (resource.data.visibility == 'public_department' && getUserDepartment() in resource.data.assignedTo.assignees)
                      ));
                      
       // Creation and Updates: Admins and Dept Heads can manage tasks.
@@ -187,7 +188,7 @@ service cloud.firestore {
     match /customer_complaints/{complaintId} {
       allow read: if isAdmin() || getUserRole() == 'customer_care' || 
                      (isAuthenticated() && resource.data.assignedTo == request.auth.uid) ||
-                     (isAuthenticated() && getUserRole() == 'department_head' && request.auth.token.department == resource.data.assignedDepartment);
+                     (isAuthenticated() && getUserRole() == 'department_head' && getUserDepartment() == resource.data.assignedDepartment);
       allow create: if isAuthenticated(); // Any staff can log a complaint on behalf of customer
       allow update: if isAdmin() || getUserRole() == 'customer_care' ||
                        (isAuthenticated() && resource.data.assignedTo == request.auth.uid);
@@ -211,7 +212,7 @@ service cloud.firestore {
 
     match /employee_performance/{perfId} {
       allow read: if isAdmin() || 
-                     (isAuthenticated() && getUserRole() == 'department_head' && resource.data.department == request.auth.token.department) ||
+                     (isAuthenticated() && getUserRole() == 'department_head' && resource.data.department == getUserDepartment()) ||
                      (isAuthenticated() && resource.data.userId == request.auth.uid);
       allow write: if isAdmin();
     }
@@ -223,7 +224,7 @@ service cloud.firestore {
 
     match /payroll_records/{recordId} {
       allow read: if isAdmin() || 
-                     (isAuthenticated() && getUserRole() == 'department_head' && resource.data.department == request.auth.token.department) ||
+                     (isAuthenticated() && getUserRole() == 'department_head' && resource.data.department == getUserDepartment()) ||
                      (isAuthenticated() && resource.data.employeeId == request.auth.uid);
       allow write: if isAdmin();
     }
