@@ -1,11 +1,21 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { useAuth } from "@/contexts/AuthContext";
 import { LogOut } from "lucide-react";
 
 export default function DashboardPage() {
   const { user, userData, signOut } = useAuth();
+  const router = useRouter();
+
+  // Redirect admins to the full admin dashboard layout
+  useEffect(() => {
+    if (userData?.role === 'admin' || userData?.role === 'super_admin') {
+      router.push('/admin/dashboard');
+    }
+  }, [userData, router]);
 
   return (
     <AuthGuard>
@@ -38,8 +48,12 @@ export default function DashboardPage() {
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
               <h2 className="text-xl font-bold text-[#0A3D91] mb-2">Welcome to ASB DATA ATMS</h2>
               <p className="text-slate-600 mb-6">
-                You are successfully authenticated. This is the foundation of the dashboard. 
-                In the next phase, we will implement role-specific widgets and modules here.
+                You are successfully authenticated. 
+                {userData?.role === 'admin' || userData?.role === 'super_admin' ? (
+                  " Redirecting you to the enterprise dashboard..."
+                ) : (
+                  " This is the foundation of the dashboard. In the next phase, we will implement role-specific widgets and modules here."
+                )}
               </p>
               
               {userData?.role === 'super_admin' && (
