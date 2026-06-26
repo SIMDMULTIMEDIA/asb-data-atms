@@ -65,7 +65,7 @@ export default function StaffDashboardPage() {
           const t = doc.data() as Task;
           if (t.status !== "completed" && t.status !== "approved" && t.status !== "cancelled") {
             open++;
-            tasks.push({ id: doc.id, ...t });
+            tasks.push({ ...t, id: doc.id });
           }
         });
         setStats(prev => ({ ...prev, myOpenTasks: open }));
